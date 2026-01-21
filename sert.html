@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Чек-лист: создание чатбота + сертификат</title>
+
+  <style>
+    :root{
+      --bg1:#f6f8ff;
+      --bg2:#eef2ff;
+      --text:#0f172a;
+      --muted:#5b6476;
+      --accent:#3b82f6;
+      --border:rgba(15,23,42,.10);
+      --shadow: 0 14px 38px rgba(15,23,42,.10);
+      --shadow2: 0 8px 20px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(900px 520px at 12% 0%, rgba(59,130,246,.18), transparent 60%),
+        radial-gradient(700px 420px at 85% 0%, rgba(34,197,94,.14), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      color:var(--text);
+      line-height:1.35;
+    }
+    .wrap{
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 26px 16px 44px;
+    }
+    header{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom: 14px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-width: 740px;
+    }
+    h1{ margin:0; font-size: 22px; letter-spacing:.2px; }
+    .sub{ color:var(--muted); font-size:14px; }
+
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.7);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      user-select:none;
+      white-space:nowrap;
+      box-shadow: var(--shadow2);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.85));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(6px);
+    }
+    .card .hd{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      background: rgba(255,255,255,.55);
+    }
+    .card .bd{ padding: 14px 16px; }
+    .hd h2{ margin:0; font-size: 16px; }
+
+    .muted{ color: var(--muted); font-size: 13px; }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+    .btn{
+      appearance:none;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.8);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+    }
+    .btn:hover{
+      background: rgba(255,255,255,1);
+      box-shadow: 0 10px 22px rgba(15,23,42,.10);
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      border-color: rgba(59,130,246,.35);
+      background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(255,255,255,.95));
+    }
+    .btn.good{
+      border-color: rgba(34,197,94,.35);
+      background: linear-gradient(180deg, rgba(34,197,94,.16), rgba(255,255,255,.95));
+    }
+    .btn.bad{
+      border-color: rgba(239,68,68,.28);
+      background: linear-gradient(180deg, rgba(239,68,68,.10), rgba(255,255,255,.95));
+    }
+    .btn:disabled{ cursor:not-allowed; opacity:.55; box-shadow:none; }
+
+    .input{
+      width:100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.9);
+      color: var(--text);
+      outline:none;
+      font-size: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .input::placeholder{ color: rgba(91,100,118,.7); }
+    .input:focus{
+      border-color: rgba(59,130,246,.45);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.12);
+    }
+
+    .checklist{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin: 0;
+      padding: 0;
+      list-style:none;
+    }
+    .item{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.85);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      box-shadow: 0 6px 16px rgba(15,23,42,.06);
+    }
+    .item label{
+      cursor:pointer;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      width:100%;
+    }
+    .item input[type="checkbox"]{
+      margin-top:2px;
+      width:18px;
+      height:18px;
+      accent-color: var(--accent);
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+    .itxt{ display:flex; flex-direction:column; gap:3px; }
+    .ititle{ font-weight: 800; font-size: 14px; }
+    .idesc{ font-size: 13px; color: var(--muted); }
+
+    .progress{
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(15,23,42,.06);
+      overflow:hidden;
+      border: 1px solid var(--border);
+    }
+    .bar{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(59,130,246,.95), rgba(34,197,94,.95));
+      transition: width .25s ease;
+    }
+    .kpi{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .kpi .box{
+      flex:1 1 180px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.85);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 6px 16px rgba(15,23,42,.06);
+    }
+    .kpi .num{ font-size: 20px; font-weight: 900; letter-spacing:.2px; margin:0; }
+    .kpi .lbl{ margin:3px 0 0; color: var(--muted); font-size: 12px; }
+
+    /* Modal */
+    dialog{
+      width:min(980px, 96vw);
+      border:none;
+      border-radius: 18px;
+      padding:0;
+      background: transparent;
+    }
+    dialog::backdrop{
+      background: rgba(15,23,42,.45);
+      backdrop-filter: blur(4px);
+    }
+    .modal{
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      background: rgba(255,255,255,.92);
+    }
+    .modal .mhd{
+      padding: 12px 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.65);
+    }
+    .modal .mbd{ padding: 14px; }
+    .x{ width:40px; height:40px; display:grid; place-items:center; border-radius: 12px; }
+
+    /* ====== СЕРТИФИКАТ A4 (ландшафт) ====== */
+    .certwrap{
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: 0 16px 40px rgba(15,23,42,.16);
+      border: 1px solid rgba(15,23,42,.10);
+      background: #fff;
+      position: relative;
+
+      width: min(920px, 92vw);
+      aspect-ratio: 297 / 210;
+      margin: 0 auto;
+    }
+    .certwrap::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: conic-gradient(
+        from 180deg,
+        rgba(59,130,246,.95),
+        rgba(34,197,94,.85),
+        rgba(245,158,11,.85),
+        rgba(239,68,68,.80),
+        rgba(168,85,247,.80),
+        rgba(59,130,246,.95)
+      );
+      filter: blur(10px);
+      opacity:.28;
+      z-index:0;
+    }
+    .cert{
+      position: relative;
+      z-index:1;
+      height:100%;
+      padding: 30px 34px 22px; /* чуть меньше снизу/сверху — меньше пустот */
+      background:
+        radial-gradient(900px 420px at 20% 0%, rgba(59,130,246,.22), transparent 60%),
+        radial-gradient(900px 420px at 85% 0%, rgba(34,197,94,.18), transparent 55%),
+        radial-gradient(900px 420px at 50% 100%, rgba(245,158,11,.10), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,1), rgba(248,250,252,1));
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* центрирование главных надписей */
+    .certMain{
+      text-align:center;
+      padding-top: 2px;
+    }
+
+    .gridlines{
+      position:absolute;
+      inset:0;
+      opacity:.16;
+      background-image:
+        linear-gradient(to right, rgba(15,23,42,.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15,23,42,.12) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at 50% 20%, rgba(0,0,0,1), transparent 70%);
+      pointer-events:none;
+    }
+    .circuit{
+      position:absolute;
+      inset:0;
+      opacity:.35;
+      pointer-events:none;
+    }
+
+    .pixels{
+      position:absolute;
+      right: 22px;
+      bottom: 20px;
+      width: 160px;
+      height: 110px;
+      display:grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap:6px;
+      opacity:.55;
+      pointer-events:none;
+    }
+    .px{
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      background: rgba(59,130,246,.22);
+      box-shadow: 0 6px 14px rgba(15,23,42,.08);
+    }
+    .px.g{ background: rgba(34,197,94,.20); }
+    .px.o{ background: rgba(245,158,11,.18); }
+    .px.p{ background: rgba(168,85,247,.18); }
+
+    .ribbon{
+      position:absolute;
+      left: 0;
+      top: 0;
+      padding: 10px 16px;
+      border-bottom-right-radius: 18px;
+      background: linear-gradient(90deg, rgba(59,130,246,.22), rgba(34,197,94,.18), rgba(245,158,11,.16));
+      border-right: 1px solid rgba(15,23,42,.08);
+      border-bottom: 1px solid rgba(15,23,42,.08);
+      font-size: 12px;
+      color: rgba(15,23,42,.78);
+      font-weight: 900;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      backdrop-filter: blur(6px);
+    }
+
+    .cert h3{
+      margin: 0;
+      font-size: 38px; /* крупнее заголовок "Сертификат" */
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .cert .small{
+      margin-top: 6px;
+      font-size: 14px;
+      color: rgba(15,23,42,.70);
+      font-weight: 850;
+    }
+
+    .cert .name{
+      margin: 16px auto 8px; /* чуть плотнее */
+      font-size: 36px;
+      font-weight: 1000;
+      letter-spacing:.2px;
+      display:inline-block;
+      padding: 8px 14px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, rgba(59,130,246,.12), rgba(34,197,94,.10), rgba(245,158,11,.10));
+      border: 1px solid rgba(15,23,42,.10);
+      box-shadow: 0 10px 22px rgba(15,23,42,.08);
+      text-align:center;
+    }
+
+    .cert .text{
+      margin: 8px auto 0; /* плотнее */
+      font-size: 15px;
+      line-height:1.6;
+      max-width: 900px;
+      color: rgba(15,23,42,.92);
+      font-weight: 650;
+      text-align:center;
+    }
+
+    /* Название мастер-класса — ЕЩЁ БОЛЬШЕ */
+    .topicBig{
+      display:block;
+      margin-top: 8px;
+      font-size: 28px;       /* было 22 */
+      font-weight: 1000;
+      letter-spacing:.2px;
+      line-height: 1.15;
+    }
+
+    .metaRow{
+      margin-top: 14px; /* ближе */
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+    }
+    .chip{
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(15,23,42,.04);
+      border: 1px solid rgba(15,23,42,.10);
+      font-size: 13px;
+      color: rgba(15,23,42,.78);
+      font-weight: 850;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background: rgba(59,130,246,.65);
+      box-shadow: 0 0 0 6px rgba(59,130,246,.10);
+    }
+    .dot.g{ background: rgba(34,197,94,.65); box-shadow: 0 0 0 6px rgba(34,197,94,.10); }
+    .dot.o{ background: rgba(245,158,11,.65); box-shadow: 0 0 0 6px rgba(245,158,11,.10); }
+
+    /* Модераторы — чуть выше и компактнее, чтобы меньше пустоты */
+    .mods{
+      margin-top: 18px;           /* вместо auto: теперь НЕ прижимаем к низу */
+      padding-top: 10px;
+      border-top: 1px dashed rgba(15,23,42,.14);
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      align-items:center;
+      text-align:center;
+    }
+    .mods .label{
+      font-size: 12px;
+      color: rgba(15,23,42,.65);
+      font-weight: 900;
+      letter-spacing:.4px;
+      text-transform: uppercase;
+    }
+    .mods .names{
+      font-size: 14px;
+      color: rgba(15,23,42,.90);
+      font-weight: 850;
+      line-height: 1.35;          /* плотнее */
+    }
+
+    @page{
+      size: A4 landscape;
+      margin: 10mm;
+    }
+    @media print{
+      body{ background:#fff; }
+      .wrap, header, .grid, .card, dialog{ display:none !important; }
+      #printArea{ display:block !important; }
+      #printArea .certwrap{
+        width: 297mm !important;
+        height: 210mm !important;
+        aspect-ratio: auto !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+      }
+      #printArea .cert{
+        padding: 16mm 16mm 12mm !important; /* плотнее, меньше пустот */
+      }
+      #printArea .pixels{ display:none !important; }
+    }
+    #printArea{ display:none; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Чек-лист «Создание образовательного чатбота»</h1>
+        <div class="sub">
+          Отметьте шаги — после заполнения откроется формирование сертификата (офлайн, без интернета).
+        </div>
+      </div>
+      <div class="pill" id="statusPill">Готовность: 0%</div>
+    </header>
+
+    <div class="grid">
+      <section class="card" aria-label="Чек-лист">
+        <div class="hd">
+          <h2>Шаги</h2>
+          <div class="row">
+            <button class="btn primary" id="btnMarkAll" type="button">Отметить всё</button>
+            <button class="btn bad" id="btnReset" type="button">Сбросить</button>
+          </div>
+        </div>
+        <div class="bd">
+          <ul class="checklist" id="checklist"></ul>
+
+          <div style="margin-top:14px;">
+            <div class="progress" aria-label="Прогресс">
+              <div class="bar" id="bar"></div>
+            </div>
+
+            <div class="kpi">
+              <div class="box">
+                <p class="num" id="doneNum">0</p>
+                <p class="lbl">Выполнено</p>
+              </div>
+              <div class="box">
+                <p class="num" id="totalNum">0</p>
+                <p class="lbl">Всего шагов</p>
+              </div>
+              <div class="box">
+                <p class="num" id="leftNum">0</p>
+                <p class="lbl">Осталось</p>
+              </div>
+            </div>
+
+            <p class="muted" style="margin:12px 0 0;">
+              Данные сохраняются в браузере (localStorage) — после обновления страницы прогресс не пропадёт.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card" aria-label="Сертификат">
+        <div class="hd">
+          <h2>Сертификат</h2>
+          <span class="muted" id="gateMsg">Заполните чек-лист, чтобы открыть выдачу.</span>
+        </div>
+        <div class="bd">
+          <label class="muted" for="fullName" style="display:block;margin-bottom:6px;">ФИО участника</label>
+          <input class="input" id="fullName" placeholder="Например: Иванов Иван Иванович" />
+
+          <div class="row" style="margin-top:12px;">
+            <button class="btn good" id="btnOpenCert" type="button" disabled>Сформировать</button>
+            <button class="btn" id="btnCopy" type="button">Скопировать данные</button>
+          </div>
+
+          <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
+            <div class="muted" style="margin-bottom:6px;">Параметры</div>
+            <div style="font-size:14px;">
+              <div><b>Тема:</b> Создание образовательных чатботов</div>
+              <div><b>Дата:</b> 22.01.2026</div>
+              <div><b>Модераторы:</b> Храмей Ирина Сергеевна, Аскарова Мадина Бахитгиреевна</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <dialog id="dlg">
+    <div class="modal">
+      <div class="mhd">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <b>Сертификат готов</b>
+          <span class="muted">Можно сохранить как PDF (A4) или как JPEG</span>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="btnPrint" type="button">Печать / PDF</button>
+          <button class="btn good" id="btnSaveJpg" type="button">Сохранить в JPEG</button>
+          <button class="btn x" id="btnClose" type="button" aria-label="Закрыть">✕</button>
+        </div>
+      </div>
+
+      <div class="mbd">
+        <div class="certwrap" id="certBox">
+          <div class="cert" id="cert">
+            <div class="gridlines"></div>
+
+            <svg class="circuit" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="lg" x1="0" x2="1">
+                  <stop offset="0" stop-color="rgba(59,130,246,.55)"/>
+                  <stop offset="0.5" stop-color="rgba(34,197,94,.45)"/>
+                  <stop offset="1" stop-color="rgba(245,158,11,.40)"/>
+                </linearGradient>
+              </defs>
+              <g fill="none" stroke="url(#lg)" stroke-width="2">
+                <path d="M40,120 H360 V220 H520 V160 H720 V260 H980" />
+                <path d="M160,520 H420 V420 H620 V520 H860 V440 H1120" />
+                <path d="M220,80 V260 H120 V360 H280 V640" />
+                <path d="M980,80 V180 H1080 V320 H960 V520" />
+              </g>
+              <g fill="rgba(15,23,42,.18)">
+                <circle cx="40" cy="120" r="5"/><circle cx="360" cy="220" r="5"/><circle cx="520" cy="160" r="5"/>
+                <circle cx="720" cy="260" r="5"/><circle cx="980" cy="260" r="5"/>
+                <circle cx="160" cy="520" r="5"/><circle cx="420" cy="420" r="5"/><circle cx="620" cy="520" r="5"/>
+                <circle cx="860" cy="440" r="5"/><circle cx="1120" cy="440" r="5"/>
+              </g>
+            </svg>
+
+            <div class="ribbon">Сертификат участника</div>
+
+            <div class="certMain">
+              <h3>Сертификат</h3>
+              <div class="small">о прохождении мастер-класса</div>
+
+              <div class="name" id="certName">—</div>
+
+              <p class="text">
+                Настоящим подтверждается, что участник прослушал(а) мастер-класс на тему
+                <span class="topicBig">«Создание образовательных чатботов»</span>
+              </p>
+
+              <div class="metaRow">
+                <div class="chip"><span class="dot"></span><span><b>Дата:</b> <span id="certDate">22.01.2026</span></span></div>
+                <div class="chip"><span class="dot g"></span><span><b>ID:</b> <span id="certId">—</span></span></div>
+                <div class="chip"><span class="dot o"></span><span><b>Статус:</b> Прослушал(а)</span></div>
+              </div>
+            </div>
+
+            <div class="mods">
+              <div class="label">Модераторы</div>
+              <div class="names" id="certMods">
+                Храмей Ирина Сергеевна<br/>
+                Аскарова Мадина Бахитгиреевна
+              </div>
+            </div>
+
+            <div class="pixels" aria-hidden="true">
+              <div class="px"></div><div class="px g"></div><div class="px"></div><div class="px o"></div><div class="px"></div>
+              <div class="px"></div><div class="px p"></div><div class="px"></div><div class="px g"></div><div class="px"></div>
+
+              <div class="px o"></div><div class="px"></div><div class="px"></div><div class="px g"></div><div class="px"></div>
+              <div class="px"></div><div class="px"></div><div class="px p"></div><div class="px"></div><div class="px"></div>
+
+              <div class="px"></div><div class="px"></div><div class="px g"></div><div class="px"></div><div class="px"></div>
+              <div class="px o"></div><div class="px"></div><div class="px"></div><div class="px"></div><div class="px p"></div>
+
+              <div class="px"></div><div class="px g"></div><div class="px"></div><div class="px"></div><div class="px"></div>
+              <div class="px"></div><div class="px o"></div><div class="px"></div><div class="px"></div><div class="px"></div>
+
+              <div class="px p"></div><div class="px"></div><div class="px"></div><div class="px"></div><div class="px g"></div>
+              <div class="px"></div><div class="px"></div><div class="px"></div><div class="px o"></div><div class="px"></div>
+
+              <div class="px"></div><div class="px"></div><div class="px g"></div><div class="px"></div><div class="px"></div>
+              <div class="px p"></div><div class="px"></div><div class="px"></div><div class="px"></div><div class="px"></div>
+
+              <div class="px"></div><div class="px o"></div><div class="px"></div><div class="px"></div><div class="px"></div>
+              <div class="px"></div><div class="px g"></div><div class="px"></div><div class="px"></div><div class="px p"></div>
+
+              <div class="px"></div><div class="px"></div><div class="px"></div><div class="px g"></div><div class="px"></div>
+              <div class="px o"></div><div class="px"></div><div class="px"></div><div class="px"></div><div class="px"></div>
+
+              <div class="px g"></div><div class="px"></div><div class="px"></div><div class="px"></div><div class="px p"></div>
+              <div class="px"></div><div class="px"></div><div class="px o"></div><div class="px"></div><div class="px"></div>
+
+              <div class="px"></div><div class="px"></div><div class="px o"></div><div class="px"></div><div class="px"></div>
+              <div class="px g"></div><div class="px"></div><div class="px"></div><div class="px p"></div><div class="px"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <p class="muted" style="margin:10px 2px 0;">
+          PDF: <b>«Печать / PDF»</b> → «Сохранить в PDF» (A4). JPEG: <b>«Сохранить в JPEG»</b>.
+        </p>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="printArea"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <script>
+    const WORKSHOP = {
+      topic: "Создание образовательных чатботов",
+      date: "22.01.2026",
+      moderators: "Храмей Ирина Сергеевна, Аскарова Мадина Бахитгиреевна"
+    };
+
+    const STEPS = [
+      { title: "Зарегистрироваться в n8n (Cloud) и открыть Instance", desc: "Создать аккаунт, открыть рабочее пространство и создать workflow." },
+      { title: "Создать Telegram-бота через @BotFather", desc: "Команда /newbot → username заканчивается на _bot → сохранить Telegram token." },
+      { title: "В n8n добавить Telegram Trigger", desc: "Подключить токен бота, выбрать Trigger On: Message, протестировать подключение." },
+      { title: "В n8n добавить узел OpenAI (Message a model)", desc: "Подключить API-ключ OpenAI, выбрать модель (например gpt-4o-mini), настроить System Prompt." },
+      { title: "Связать текст пользователя из Telegram Trigger с запросом в OpenAI", desc: "Передать: {{$node['Telegram Trigger'].json['message']['text']}}" },
+      { title: "Добавить Telegram Send Message для ответа пользователю", desc: "Chat ID из Trigger, Text из ответа OpenAI (output content)." },
+      { title: "Протестировать workflow", desc: "Execute/Test → написать боту в Telegram → убедиться, что отвечает." }
+    ];
+
+    const LS_KEYS = {
+      checks: "bot_checklist_checks_v3",
+      name: "bot_checklist_name_v3"
+    };
+
+    const checklistEl = document.getElementById("checklist");
+    const barEl = document.getElementById("bar");
+    const statusPill = document.getElementById("statusPill");
+    const doneNum = document.getElementById("doneNum");
+    const totalNum = document.getElementById("totalNum");
+    const leftNum = document.getElementById("leftNum");
+    const gateMsg = document.getElementById("gateMsg");
+
+    const fullNameEl = document.getElementById("fullName");
+    const btnOpenCert = document.getElementById("btnOpenCert");
+    const btnReset = document.getElementById("btnReset");
+    const btnMarkAll = document.getElementById("btnMarkAll");
+    const btnCopy = document.getElementById("btnCopy");
+
+    const dlg = document.getElementById("dlg");
+    const btnClose = document.getElementById("btnClose");
+    const btnPrint = document.getElementById("btnPrint");
+    const btnSaveJpg = document.getElementById("btnSaveJpg");
+
+    const certName = document.getElementById("certName");
+    const certDate = document.getElementById("certDate");
+    const certId = document.getElementById("certId");
+    const certMods = document.getElementById("certMods");
+    const certBox = document.getElementById("certBox");
+
+    function safeJSONParse(str, fallback){ try { return JSON.parse(str); } catch { return fallback; } }
+
+    function makeId(name){
+      const base = (name || "NONAME") + "|" + WORKSHOP.topic + "|" + WORKSHOP.date;
+      let h = 0;
+      for (let i=0; i<base.length; i++){
+        h = ((h << 5) - h) + base.charCodeAt(i);
+        h |= 0;
+      }
+      const hex = (h >>> 0).toString(16).toUpperCase().padStart(8,"0");
+      const rnd = Math.random().toString(16).slice(2,6).toUpperCase();
+      return `MC-${WORKSHOP.date.replaceAll(".","")}-${hex}-${rnd}`;
+    }
+
+    function getChecks(){
+      const raw = localStorage.getItem(LS_KEYS.checks);
+      const arr = safeJSONParse(raw, null);
+      if (!Array.isArray(arr) || arr.length !== STEPS.length){
+        return Array.from({length: STEPS.length}, () => false);
+      }
+      return arr.map(Boolean);
+    }
+    function setChecks(arr){ localStorage.setItem(LS_KEYS.checks, JSON.stringify(arr)); }
+
+    function updateProgress(){
+      const checks = getChecks();
+      const total = checks.length;
+      const done = checks.filter(Boolean).length;
+      const left = total - done;
+      const pct = total ? Math.round((done/total)*100) : 0;
+
+      barEl.style.width = pct + "%";
+      statusPill.textContent = `Готовность: ${pct}%`;
+      totalNum.textContent = total;
+      doneNum.textContent = done;
+      leftNum.textContent = left;
+
+      const allDone = done === total && total > 0;
+      const nameOk = (fullNameEl.value || "").trim().length >= 3;
+
+      btnOpenCert.disabled = !(allDone && nameOk);
+
+      if (!allDone){
+        gateMsg.textContent = "Заполните чек-лист, чтобы открыть выдачу.";
+      } else if (!nameOk){
+        gateMsg.textContent = "Чек-лист заполнен. Осталось указать ФИО для сертификата.";
+      } else {
+        gateMsg.textContent = "Готово! Можно сформировать сертификат.";
+      }
+    }
+
+    function renderChecklist(){
+      checklistEl.innerHTML = "";
+      const checks = getChecks();
+
+      STEPS.forEach((s, idx) => {
+        const li = document.createElement("li");
+        li.className = "item";
+        const id = `cb_${idx}`;
+
+        li.innerHTML = `
+          <label for="${id}">
+            <input type="checkbox" id="${id}" ${checks[idx] ? "checked": ""} />
+            <span class="itxt">
+              <span class="ititle">${s.title}</span>
+              <span class="idesc">${s.desc}</span>
+            </span>
+          </label>
+        `;
+
+        const cb = li.querySelector("input");
+        cb.addEventListener("change", () => {
+          const next = getChecks();
+          next[idx] = cb.checked;
+          setChecks(next);
+          updateProgress();
+        });
+
+        checklistEl.appendChild(li);
+      });
+
+      updateProgress();
+    }
+
+    function loadName(){
+      const saved = localStorage.getItem(LS_KEYS.name);
+      if (saved) fullNameEl.value = saved;
+      fullNameEl.addEventListener("input", () => {
+        localStorage.setItem(LS_KEYS.name, fullNameEl.value);
+        updateProgress();
+      });
+    }
+
+    function buildCertificate(){
+      const name = (fullNameEl.value || "").trim();
+      certName.textContent = name || "—";
+      certDate.textContent = WORKSHOP.date;
+      certId.textContent = makeId(name);
+
+      certMods.innerHTML = WORKSHOP.moderators
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean)
+        .join("<br/>");
+
+      const printArea = document.getElementById("printArea");
+      printArea.innerHTML = "";
+      const clone = certBox.cloneNode(true);
+      clone.style.border = "none";
+      clone.style.boxShadow = "none";
+      clone.style.width = "297mm";
+      clone.style.height = "210mm";
+      clone.style.margin = "0 auto";
+      printArea.appendChild(clone);
+    }
+
+    btnReset.addEventListener("click", () => {
+      setChecks(Array.from({length: STEPS.length}, () => false));
+      renderChecklist();
+    });
+
+    btnMarkAll.addEventListener("click", () => {
+      setChecks(Array.from({length: STEPS.length}, () => true));
+      renderChecklist();
+    });
+
+    btnCopy.addEventListener("click", async () => {
+      const checks = getChecks();
+      const done = checks.filter(Boolean).length;
+      const total = checks.length;
+
+      const payload =
+`Чек-лист мастер-класса: ${WORKSHOP.topic}
+Дата: ${WORKSHOP.date}
+Модераторы: ${WORKSHOP.moderators}
+Участник: ${(fullNameEl.value||"").trim() || "—"}
+Прогресс: ${done}/${total} (${total ? Math.round(done/total*100) : 0}%)
+`;
+
+      try{
+        await navigator.clipboard.writeText(payload);
+        btnCopy.textContent = "Скопировано ✓";
+        setTimeout(() => btnCopy.textContent = "Скопировать данные", 1100);
+      }catch{
+        alert("Не удалось скопировать. Можно выделить и скопировать вручную:\n\n" + payload);
+      }
+    });
+
+    btnOpenCert.addEventListener("click", () => {
+      buildCertificate();
+      dlg.showModal();
+    });
+
+    btnClose.addEventListener("click", () => dlg.close());
+
+    btnPrint.addEventListener("click", () => {
+      buildCertificate();
+      window.print();
+    });
+
+    btnSaveJpg.addEventListener("click", async () => {
+      buildCertificate();
+      const node = document.getElementById("certBox");
+
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true
+      });
+
+      const jpgData = canvas.toDataURL("image/jpeg", 0.95);
+
+      const safeName = (fullNameEl.value||"").trim().replace(/\s+/g,"_") || "NONAME";
+      const a = document.createElement("a");
+      a.href = jpgData;
+      a.download = `certificate_A4_${safeName}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+
+    (function init(){
+      totalNum.textContent = STEPS.length;
+      loadName();
+      renderChecklist();
+      updateProgress();
+    })();
+  </script>
+</body>
+</html>
